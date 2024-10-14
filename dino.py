@@ -1,152 +1,91 @@
-#include <stdio.h>
-#include <conio.h>
-#include <time.h>
-#include <windows.h>
-void gotoxy(int x, int y)
-{
- COORD coord;
- coord.X = x;
- coord.Y = y;
- SetConsoleCursorPosition(GetStdHandle(STD_OUTPUT_HANDLE), coord);
-}
-void delay(unsigned int mseconds)
-{
-    clock_t goal = mseconds + clock();
-    while (goal > clock());
-}
-void getup()
-{
-    system("cls");
-    gotoxy(10,2);
-    printf("Press X to Exit, Press Space to Jump");
-    gotoxy(62,2);
-    printf("SCORE : ");
-    gotoxy(1,25);
-    for(int x=0;x<79;x++)
-    printf("�");
-}
+import curses
+import time
 
-int t,speed=40;
-void ds(int jump == 0)
-{
-    static int a=1;
+def main(stdscr):
+    curses.curs_set(0)  # Hide cursor
+    stdscr.nodelay(1)   # Don't block on getch()
+    stdscr.timeout(100) # Set a timeout for getch()
 
-    if(jump==0)
-        t=0;
-    else if(jump==2)
-        t--;
-    else t++;
-    gotoxy(2,15-t);
-    printf("                 ");
-    gotoxy(2,16-t);
-    printf("         ��������");
-    gotoxy(2,17-t);
-    printf("         ��������");
-    gotoxy(2,18-t);
-    printf("         ��������");
-    gotoxy(2,19-t);
-    printf(" �      �������� ");
-    gotoxy(2,20-t);
-    printf(" ���  ���������� ");
-    gotoxy(2,21-t);
-    printf(" ������������  � ");
-    gotoxy(2,22-t);
-    printf("   ���������     ");
-    gotoxy(2,23-t);
-    if(jump==1 || jump==2){
-    printf("    ��� ��       ");
-    gotoxy(2,24-t);
-    printf("    ��   ��      ");
-    }else if(a==1)
-    {
-    printf("    ����  ���    ");
-    gotoxy(2,24-t);
-    printf("      ��         ");
-    a=2;
-    }
-    else if(a==2)
-    {
-    printf("     ��� ��      ");
-    gotoxy(2,24-t);
-    printf("          ��     ");
-    a=1;
-    }
-    gotoxy(2,25-t);
-    if(jump!=0){
-        printf("                ");
-    }
-    else
-    {
+    height, width = stdscr.getmaxyx()
+    score = 0
+    speed = 40
+    jump_height = 0
 
-        printf("�����������������");
-    }
-    delay(speed);
-}
-void obj()
-{
-    static int x=0,scr=0;
-    if(x==56 && t<4)
-    {
-    scr=0;
-    speed=40;
-    gotoxy(36,8);
-    printf("Game Over");
-    getch();
-    gotoxy(36,8);
-    printf("         ");
-    }
-    gotoxy(74-x,20);
-    printf("�    � ");
-    gotoxy(74-x,21);
-    printf("�    � ");
-    gotoxy(74-x,22);
-    printf("������ ");
-    gotoxy(74-x,23);
-    printf("  �    ");
-    gotoxy(74-x,24);
-    printf("  �  " );
-    x++;
-    if(x==73)
-    {
-    x=0;
-    scr++;
-    gotoxy(70,2);
-    printf("     ");
-    gotoxy(70,2);
-    printf("%d",scr);
-    if(speed>20)
-        speed--;
-    }
-}
-int main()
-{
-    system("mode con: lines=29 cols=82");
-    char ch;
-    int i;
-    getup();
-    while(true)
-    {
-        while(!kbhit())
-        {
-            ds();
-            obj();
-        }
-        ch=getch();
-        if(ch==' ')
-        {
-            for(i=0;i<10;i++)
-            {
-            ds(1);
-            obj();
-            }
-            for(i=0;i<10;i++)
-            {
-            ds(2);
-            obj();
-            }
-        }
-        else if (ch=='x')
-            return(0);
-    }
+    def display_instructions():
+        stdscr.clear()
+        stdscr.addstr(1, 10, "Press X to Exit, Press Space to Jump")
+        stdscr.addstr(1, 62, "SCORE: ")
+        stdscr.addstr(1, 70, str(score))
+        stdscr.addstr(height - 1, 0, '�' * (width - 1))
 
-}
+    def draw_character(jump_state):
+        nonlocal jump_height
+        if jump_state == 0:
+            jump_height = 0
+        elif jump_state == 1:
+            jump_height += 1
+        elif jump_state == 2:
+            jump_height -= 1
+
+        for i in range(6):
+            stdscr.addstr(15 - jump_height + i, 2, " " * 20)  # Clear previous character
+        stdscr.addstr(15 - jump_height, 2, "         #####")
+        stdscr.addstr(16 - jump_height, 2, "         #####")
+        stdscr.addstr(17 - jump_height, 2, "         #####")
+        stdscr.addstr(18 - jump_height, 2, "    #    #####")
+        stdscr.addstr(19 - jump_height, 2, "   ###   ######")
+        stdscr.addstr(20 - jump_height, 2, "  ###########  ")
+        stdscr.addstr(21 - jump_height, 2, "    ########    ")
+        stdscr.addstr(22 - jump_height, 2, "     ####      ")
+        stdscr.refresh()
+
+    def draw_obstacle(x):
+        stdscr.addstr(20, width - x, "  O   O ")
+        stdscr.addstr(21, width - x, "  O   O ")
+        stdscr.addstr(22, width - x, " OOOOOO ")
+        stdscr.addstr(23, width - x, "   O    ")
+        stdscr.addstr(24, width - x, "   O    ")
+        stdscr.refresh()
+
+    x = 0
+    while True:
+        display_instructions()
+        jump_state = 0
+
+        # Move the character and check for input
+        while True:
+            draw_character(jump_state)
+            draw_obstacle(x)
+            x += 1
+
+            if x == width - 10:  # Reset obstacle position
+                x = 0
+                score += 1
+                if speed > 20:
+                    speed -= 1
+            
+            time.sleep(0.1)  # Adjust speed
+
+            # Handle user input
+            key = stdscr.getch()
+            if key == curses.KEY_SPACE:
+                jump_state = 1
+                for _ in range(10):  # Jump up
+                    draw_character(jump_state)
+                    time.sleep(0.05)
+                jump_state = 2
+                for _ in range(10):  # Fall down
+                    draw_character(jump_state)
+                    time.sleep(0.05)
+                jump_state = 0
+            elif key == ord('x'):
+                return
+
+            # Check for collision
+            if x >= width - 10 and jump_height < 4:
+                stdscr.addstr(height // 2, width // 2 - 5, "Game Over!")
+                stdscr.refresh()
+                stdscr.getch()
+                return
+
+curses.wrapper(main)
